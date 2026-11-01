@@ -131,7 +131,8 @@ tests/                 日期与真实 SQLite 自动化测试
 - Android 原生配置在仓库外通过 Expo prebuild 验证；应用保留托管工作流，无原生目录入库。
 - Android release Hermes JS bundle 成功导出。**JS 打包成功不等于 APK 原生编译或真机验收通过。**
 - SDK 离线兼容检查通过；Expo Doctor 本地检查通过，在线 schema / React Native Directory 检查受到云环境网络限制，未宣称全通过。
-- 构建入口已改为 GitHub 直接编译，不再依赖 Expo 账户。最终原生编译结果请以最新 Actions 运行和实际 Artifacts 为准；真机交互仍需安装后验收。
+- 构建入口已改为 GitHub 直接编译，不再依赖 Expo 账户。Codex 实际运行已通过原生项目生成、Gradle 插件编译和 SDK/NDK 安装，随后下载 react-android 原生库时被环境白名单阻断（重定向到 `repo.reactnative.dev` 返回 403），没有宣称本机 APK 编译成功。
+- 已随提交自动启动 [GitHub 直接构建 #2](https://github.com/YuTaoBai/rili/actions/runs/41290623978)。最终结果请以最新 Actions 状态和实际 Artifacts 为准；真机交互仍需安装后验收。
 
 安装 APK 后请在手机复核：新建两条安排 → 强制关闭重开 → 修改/删除 → 切换月份与返回今天 → 导出到应用之外 → 在另一台手机导入；测试软键盘、返回退出确认、长备注和系统字体放大。自动测试不替代 Android 原生文件选择器/分享面板与 UI 真机验证。
 
@@ -139,4 +140,4 @@ tests/                 日期与真实 SQLite 自动化测试
 
 Git HTTPS 读写可用。当前 Codex 环境阻止 `api.github.com`，因此可能无法从聊天中触发、监控 GitHub Actions 或下载其产物；这不影响你在 GitHub 网页运行新工作流。该工作流不需要访问 Expo 构建 API。
 
-Codex 本机尝试原生编译仍需要 Google Android SDK、Gradle、Maven 等下载域名可达；如果本机网络阻断，以 GitHub runner 构建为准。不要关闭 TLS/校验或绕过平台代理。
+Codex 本机尝试原生编译仍需要 Google Android SDK、Gradle、Maven、`repo.reactnative.dev` 等下载域名可达；如果本机网络阻断，以 GitHub runner 构建为准。不要关闭 TLS/校验或绕过平台代理。
