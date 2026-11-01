@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "我的日历",
+    "slug": "wo-de-ri-li",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "mycalendar",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "platforms": ["android", "ios"],
+    "android": {
+      "package": "com.yutaobai.mycalendar",
+      "versionCode": 1,
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#EAF1FF"
+      },
+      "allowBackup": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 160,
+          "backgroundColor": "#F5F8FD"
+        }
+      ]
+    ]
+  }
+}

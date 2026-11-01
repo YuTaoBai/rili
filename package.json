@@ -1,0 +1,53 @@
+{
+  "dependencies": {
+    "expo": "~58.0.22",
+    "expo-constants": "~58.0.14",
+    "expo-crypto": "~58.0.7",
+    "expo-document-picker": "~58.0.4",
+    "expo-file-system": "~58.0.13",
+    "expo-linking": "~58.0.15",
+    "expo-router": "~58.0.29",
+    "expo-sharing": "~58.0.21",
+    "expo-splash-screen": "~58.0.12",
+    "expo-sqlite": "~58.0.15",
+    "expo-status-bar": "~58.0.4",
+    "expo-system-ui": "~58.0.7",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.1"
+  },
+  "devDependencies": {
+    "@react-native/jest-preset": "^0.88.1",
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.19.2",
+    "@types/react": "~19.3.0",
+    "expo-doctor": "^1.21.5",
+    "jest": "^30.5.2",
+    "jest-expo": "~58.0.13",
+    "react-server-dom-webpack": "19.3.0",
+    "test-renderer": "^1.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  },
+  "name": "wo-de-ri-li",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "npm run test:unit && npm run test:ui",
+    "check": "npm run typecheck && npm test",
+    "build:apk": "npx --yes eas-cli@27.2.0 build -p android --profile preview",
+    "bundle:android": "expo export --platform android --max-workers 2",
+    "test:unit": "node --import tsx --test --experimental-test-isolation=none tests/*.test.ts",
+    "test:ui": "jest --runInBand"
+  },
+  "engines": {
+    "node": "^24.3.0"
+  }
+}

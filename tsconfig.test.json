@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "tests/**/*.ts",
+    "src/calendar.ts",
+    "src/events.ts",
+    "src/database.ts",
+    "tests/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

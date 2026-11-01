@@ -1,0 +1,27 @@
+name: 云端生成 Android APK
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
+      EXPO_OWNER: ${{ vars.EXPO_OWNER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: 检查 Expo 配置
+        run: |
+          test -n "$EXPO_TOKEN" || { echo '请先在仓库 Actions secrets 中设置 EXPO_TOKEN'; exit 1; }
+          test -n "$EAS_PROJECT_ID" || { echo '请先在仓库 Actions variables 中设置 EAS_PROJECT_ID'; exit 1; }
+      - run: npm ci
+      - run: npm run check
+      - name: 提交 EAS APK 构建并等待结果
+        run: npx --yes eas-cli@27.2.0 build -p android --profile preview --non-interactive
