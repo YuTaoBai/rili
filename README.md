@@ -30,47 +30,62 @@ EXPO_OFFLINE=1 npm run bundle:android
 
 开发时 `npm start` 启动 Metro，在 Android Expo Go（需支持 SDK 58）扫码调试。云环境需配置可访问的 Metro 网络或隧道；**独立 APK 不需要 Metro**。本项目以 Android 原生为目标，不提供浏览器版 SQLite 兼容层。
 
-## 生成独立 APK（全部在云端）
+## 一键生成 APK：只用 GitHub，不需要 Expo 账号
 
-### 1. 创建自己的 Expo 项目并授权
+现在使用 **GitHub Actions + Android Gradle 直接编译**。Expo 只作为 App 框架使用，打包不调用 EAS，不要求 Expo 登录、Token、Project ID 或 Mac 原生开发工具。
 
-1. 在浏览器打开 [Expo](https://expo.dev)，注册/登录。应用使用者不需要这个账号，它仅用于构建。
-2. 在 Expo Dashboard 创建项目，建议 slug 为 `wo-de-ri-li`；从 Project settings 复制 **Project ID（UUID）**，记下所属账号/组织名。
-3. 在 Expo 账户设置的 **Access tokens** 创建构建用 token。在 Codex 云环境的安全配置中提供 `EXPO_TOKEN`；把公开配置 `EAS_PROJECT_ID`、`EXPO_OWNER` 设置为对应项目和账号/组织。Token 只放安全设置，不要发到聊天或提交到代码。
-4. 如使用平台代理注入凭据，`EXPO_TOKEN` 的 HTTPS 目标为 `api.expo.dev`。保留平台代理和 TLS 校验。
+### 你只需要点击这些位置
 
-`app.config.ts` 会读取上述公开项目配置；也可将公开的 `owner` 和 `extra.eas.projectId` 填入 `app.json`。本仓库没有虚构或绑定他人的 Project ID。
+1. 打开 [仓库 Actions](https://github.com/YuTaoBai/rili/actions/workflows/android-apk.yml)。
+2. 选择 **一键生成 APK（无需 Expo 账号）** → **Run workflow** → 分支选 `main` → 再点 **Run workflow**。
+3. 打开最新一次运行，等待绿色成功标记。首次需要下载原生依赖并编译，请预留约 15–40 分钟；实际时间取决于 GitHub runner。
+4. 在本次运行的 **Summary** 页面下方找到 **Artifacts**，点击 `my-calendar-preview-编号` 下载压缩包（需登录 GitHub）。
+5. 解压，取出 `my-calendar-preview.apk`，发送到安卓手机；允许当前浏览器/文件管理器安装未知应用，打开 APK 安装。
 
-### 2. 在 Codex Cloud 执行
+**无需配置任何 Secret 或变量。** 推送应用代码到 main 也会自动开始构建。旧的 EXPO_TOKEN/EAS_PROJECT_ID/EXPO_OWNER 已不被读取，先前失败的运行也不必重跑，请启动最新代码的新运行。
+
+下载得到的是 **release 模式、内置 Hermes JS 和资源、带测试签名的独立体验版**，不需要 Expo Go、Metro、开发服务器或电脑。安装后日历功能全部离线运行。APK 包含 ARM64 和 ARMv7 原生库，面向主流 ARM 安卓手机，不包含 x86 模拟器架构。支持的最低 Android 系统以构建产物的 `minSdkVersion` 为准。
+
+默认显示名“我的日历·体验版”，包名 `com.yutaobai.mycalendar.preview`。为实现零配置，体验版使用 Expo 官方原生模板的**公开测试签名**，适合个人安装试用，不应用作正式分发签名。后续保持同一模板签名和包名，可覆盖安装体验版并保留数据；升级框架前请先导出备份。
+
+下载产物只包含 APK 和 SHA256SUMS.txt，保留 30 天；过期后重新运行即可。**只有本次任务绿色成功且出现 Artifacts，才表示实际生成了 APK。**
+
+### 正式签名（可选，先用默认体验版即可）
+
+<details>
+<summary>准备长期正式分发时，再展开配置一次私有签名</summary>
+
+正式版包名为 `com.yutaobai.mycalendar`，与体验版可同时安装，数据库彼此独立。迁移时在体验版导出 JSON，再到正式版导入。
+
+需要在 GitHub 仓库 **Settings → Secrets and variables → Actions → Secrets** 添加四项：
+
+| Secret                    | 内容                             |
+| ------------------------- | -------------------------------- |
+| ANDROID_KEYSTORE_BASE64   | 私有 keystore 文件的 Base64 编码 |
+| ANDROID_KEYSTORE_PASSWORD | keystore 密码                    |
+| ANDROID_KEY_ALIAS         | 密钥别名                         |
+| ANDROID_KEY_PASSWORD      | 密钥密码                         |
+
+签名文件可在云端用 JDK 自带的 keytool 创建，无需在 Mac 安装工具。已有正式签名应继续复用，不要重新生成。不要把私钥、密码放进代码、聊天、GitHub artifact 或缓存。
+
+四项都存在时，工作流自动生成 `my-calendar-release.apk`；都不存在时直接生成体验版；只填一部分会明确报错，避免悄悄使用错误签名。正式版私钥仅在 runner 临时目录恢复，构建完成后清理。请另行安全备份 keystore 及密码，丢失后无法用相同签名更新应用。
+
+</details>
+
+### 云端构建内部流程
+
+GitHub 自动配置 Node 24、JDK 17，并使用 Ubuntu 24.04 runner 预装的 Android SDK：
 
 ```sh
-cd /workspace/rili
-npx --yes eas-cli@27.2.0 whoami
-npx --yes eas-cli@27.2.0 project:info
-npm run build:apk
-# 等价于 eas build -p android --profile preview
+npm ci
+npm run check
+# 以下仅在有 Android SDK/JDK 的云机器运行，不需要你在 Mac 执行：
+APK_VARIANT=preview npm run build:apk
 ```
 
-首次构建选择让 EAS 生成并保管 Android Keystore；以后使用同一签名。首次创建签名可能需要交互确认；已有远程签名后可使用 `--non-interactive`。
+构建脚本临时生成被忽略的 `android/` 目录，调用 `:app:assembleRelease`，然后检查 APK 签名、包名、非调试模式、离线 bundle 和 ARM 原生库，最后上传 Artifacts。原生生成会重建 android/，不要在里面保存需要保留的修改。
 
-`eas.json` 的 preview 使用 `distribution: internal` 与 `android.buildType: apk`。这是带 JS 和资源的独立 release 应用，不是要求开发服务器的调试包。生产配置另提供 AAB，不能作为 APK 直接安装。EAS 免费额度、排队和服务政策以 Expo 当前说明为准。
-
-当前包名 `com.yutaobai.mycalendar`，版本 1.0.0 / versionCode 1。发布后更新请保留包名、项目及签名，并递增版本号。不要卸载旧版再安装，否则本地数据库会丢失。
-
-### 3. 也可仅用浏览器触发 GitHub Actions
-
-首次 EAS 项目和签名准备好后：
-
-1. GitHub 仓库 → **Settings → Secrets and variables → Actions**。
-2. Secrets 添加 `EXPO_TOKEN`；Variables 添加 `EAS_PROJECT_ID` 和 `EXPO_OWNER`。
-3. 仓库 → **Actions → 云端生成 Android APK → Run workflow**。
-4. 打开任务日志中的真实 EAS 构建链接。该工作流等待 EAS 结果，APK 由 Expo 托管，不是 GitHub artifact。
-
-### 4. 在 Android 手机上安装
-
-在 EAS 成功构建页点击 **Install / Download** 下载 `.apk`，或用手机扫描该页二维码。按系统提示允许当前浏览器/文件管理器“安装未知应用”，打开 APK 安装。以后正常使用不需要 Expo 账号、Expo Go、电脑或联网。
-
-**只有 EAS 显示 Finished 且实际产出 APK 后才能下载。当前开发交付没有成功 APK 链接，见下方验证状态。**
+正式签名 APK 的构建编号取自 GitHub 运行编号，更新时保持原包名和签名。不要先卸载再安装，否则本地数据库会被删除；换包名/签名前先导出备份。
 
 ## 备份与换机
 
@@ -98,8 +113,8 @@ src/store.tsx          SQLite 生命周期、初始化重试与刷新通知
 src/theme.ts           颜色与通用样式
 assets/                原创日历图标和启动图
 app.json               应用信息、Android 包名与权限配置
-app.config.ts          可配置的 Expo 项目归属
-.easignore / eas.json   云构建上传与 APK 配置
+app.config.ts          体验版/正式版包名及构建版本
+scripts/android/       原生生成、签名配置、Gradle 编译及 APK 校验
 .github/workflows/     持续检查和手动 APK 构建
 tests/                 日期与真实 SQLite 自动化测试
 ```
@@ -111,17 +126,17 @@ tests/                 日期与真实 SQLite 自动化测试
 本次云端执行：
 
 - TypeScript 应用代码、测试代码检查通过。
-- 14 项自动化测试通过：4 项真实 Expo Router/React Native 页面测试（月份切换、表单校验与保存、删除确认、未保存退出拦截），以及 10 项 Node 数据/日期测试。数据测试使用真正的 SQLite，不是内存对象模拟数据库：关闭重开持久化、同天多条、移动日期、修改删除、排序、月索引、备份导入导出、重复合并、故障事务回滚及数据库版本检查。
+- 19 项自动化测试通过：5 项构建/签名配置测试，4 项真实 Expo Router/React Native 页面测试（月份切换、表单校验与保存、删除确认、未保存退出拦截），以及 10 项 Node 数据/日期测试。数据测试使用真正的 SQLite，不是内存对象模拟数据库：关闭重开持久化、同天多条、移动日期、修改删除、排序、月索引、备份导入导出、重复合并、故障事务回滚及数据库版本检查。
 - 日期测试覆盖 2028-02-29、跨年、周一起始，以及 UTC、上海、洛杉矶、基里蒂马蒂和圣地亚哥的本地日期/DST 边界。
 - Android 原生配置在仓库外通过 Expo prebuild 验证；应用保留托管工作流，无原生目录入库。
 - Android release Hermes JS bundle 成功导出。**JS 打包成功不等于 APK 原生编译或真机验收通过。**
 - SDK 离线兼容检查通过；Expo Doctor 本地检查通过，在线 schema / React Native Directory 检查受到云环境网络限制，未宣称全通过。
-- `eas whoami` 返回未登录，无可用 Expo 授权/项目签名，**未生成 APK**。首次原生编译和真机交互验收仍需完成。
+- 构建入口已改为 GitHub 直接编译，不再依赖 Expo 账户。最终原生编译结果请以最新 Actions 运行和实际 Artifacts 为准；真机交互仍需安装后验收。
 
 安装 APK 后请在手机复核：新建两条安排 → 强制关闭重开 → 修改/删除 → 切换月份与返回今天 → 导出到应用之外 → 在另一台手机导入；测试软键盘、返回退出确认、长备注和系统字体放大。自动测试不替代 Android 原生文件选择器/分享面板与 UI 真机验证。
 
-### 当前云环境网络限制
+### Codex 云环境网络限制
 
-Git HTTPS 读取可用。Expo API、React Native Directory 和 GitHub PR API 检查遇到代理白名单限制；尝试保存域名配置时，环境草稿已不可编辑，**新增域名未保存/应用**。
+Git HTTPS 读写可用。当前 Codex 环境阻止 `api.github.com`，因此可能无法从聊天中触发、监控 GitHub Actions 或下载其产物；这不影响你在 GitHub 网页运行新工作流。该工作流不需要访问 Expo 构建 API。
 
-请在环境设置保留已有 package_managers 预设，并添加 `api.expo.dev`、`exp.host`、`expo.dev`、`reactnative.directory`、`api.github.com`。后续 EAS 上传如报告其他目标受限，应按错误添加所需精确域名。不要关闭 TLS 校验或绕过平台代理。联网 Node 工具可通过 `NODE_USE_ENV_PROXY=1` 使用平台代理。
+Codex 本机尝试原生编译仍需要 Google Android SDK、Gradle、Maven 等下载域名可达；如果本机网络阻断，以 GitHub runner 构建为准。不要关闭 TLS/校验或绕过平台代理。

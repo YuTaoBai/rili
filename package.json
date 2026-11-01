@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "npm run test:unit && npm run test:ui",
     "check": "npm run typecheck && npm test",
-    "build:apk": "npx --yes eas-cli@27.2.0 build -p android --profile preview",
+    "build:apk": "bash scripts/android/build-apk.sh",
     "bundle:android": "expo export --platform android --max-workers 2",
     "test:unit": "node --import tsx --test --experimental-test-isolation=none tests/*.test.ts",
     "test:ui": "jest --runInBand"
